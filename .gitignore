@@ -1,0 +1,4 @@
+*.csv
+chromedriver.exe
+_main.py
+stock_venv/
