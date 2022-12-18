@@ -1,21 +1,22 @@
 # Copyright (c) 2022 yeongjun hwang, Github : yeongjun0807, Email : yeongjun0807@gmail.com
 # MIT License
-# Crawler for korea stock (KOSPI)
-# Version | Alpha
+# Crawler for korea stock (KOSPI) - load data and save them in csv file
+# ver. Beta
 
 import os
-import pandas as pd # for save csv file
+import pandas as pd # for save csv file and analyze data
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 
 options = webdriver.ChromeOptions() # add options
-options.add_argument('headless') # invisible window
+options.add_argument("headless") # invisible window
 options.add_argument("disable-gpu") # avoid bugs
 url = "https://finance.naver.com/sise/sise_market_sum.naver?&page=" # stock webpage url  (DO NOT EDIT)
 
 browser = webdriver.Chrome("chromedriver", options = options)
 browser.maximize_window() # maximize_window
+
 print("waiting...")
 browser.implicitly_wait(3) # wait for stability
 browser.get(url)
@@ -39,7 +40,7 @@ for checkbox in checkboxes:
         checkbox.click() # check
 
 # click apply button
-btn_apply = browser.find_element(By.XPATH, "//a[@href='javascript:fieldSubmit()']")
+btn_apply = browser.find_element(By.XPATH, "//a[@href='javascript:fieldSubmit()']") # DO NOT EDIT THIS XPATH
 btn_apply.click()
 
 for i in range(1, 40): # repeat page
@@ -51,6 +52,7 @@ for i in range(1, 40): # repeat page
     data_frame.dropna(axis = "index", how = "all", inplace = True) # if data don't exist in an entire row
     #                        row/column              apply
     data_frame.dropna(axis = "columns", how = "all", inplace = True) # if data don't exist in an entire column
+    #data_frame.drop(["N"], axis = 1, inplace = True)
 
     if len(data_frame) == 0: # if no data
         break
