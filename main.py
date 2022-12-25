@@ -1,6 +1,6 @@
 # Copyright (c) 2022 yeongjun hwang, Github : yeongjun0807, Email : yeongjun0807@gmail.com
 # MIT License
-# Crawler for korea stock (KOSPI) - load data and save them in csv file
+# Crawler for korea stock (KOSPI) - load and save data in csv file
 # ver. Beta
 
 import os
@@ -18,8 +18,8 @@ browser = webdriver.Chrome("chromedriver", options = options)
 browser.maximize_window() # maximize_window
 
 print("waiting...")
-browser.implicitly_wait(3) # wait for stability
 browser.get(url)
+browser.implicitly_wait(3) # wait for stability
 
 # find unchecked checkboxes and uncheck
 checkboxes = browser.find_elements(By.NAME, "fieldIds")
