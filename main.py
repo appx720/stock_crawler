@@ -1,75 +1,49 @@
 # Copyright (c) 2022 yeongjun hwang, Github : yeongjun0807, Email : yeongjun0807@gmail.com
 # MIT License
-# Crawler for korea stock (KOSPI) - load and save data in csv file
-# ver. Beta
+# Crawler for korea stock (KOSPI, KOSDAQ) - load, analyze and save data in csv file
+# ver. 0.0.1
+# If you want to use this code, go to "https://data.go.kr", get key, make `key` file and put the key in it
 
-import os
-import pandas as pd # for save csv file and analyze data
-from selenium import webdriver
-from selenium.webdriver.common.by import By
+import sys
+import urllib3
+import requests
+import pandas as pd
+
+def get_key():
+   """get key from key file"""
+   with open("key", "r") as f:
+      k = f.read()
+      return f"https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo?serviceKey={k}&numOfRows=10000&resultType=json" # stock webpage url (DO NOT EDIT)
 
 
-options = webdriver.ChromeOptions() # add options
-options.add_argument("headless") # invisible window
-options.add_argument("disable-gpu") # avoid bugs
-url = "https://finance.naver.com/sise/sise_market_sum.naver?&page=" # stock webpage url  (DO NOT EDIT)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) # Remove InsecureRequestWarning
+url = get_key()
 
-browser = webdriver.Chrome("chromedriver", options = options)
-browser.maximize_window() # maximize_window
+print("Crawling")
 
-print("waiting...")
-browser.get(url)
-browser.implicitly_wait(3) # wait for stability
+r = requests.get(url, verify = False)
+raw_data = r.json() # first data (include both header and body)
 
-# find unchecked checkboxes and uncheck
-checkboxes = browser.find_elements(By.NAME, "fieldIds")
+if raw_data["response"]["header"]["resultCode"] == "00": # check status code
+   print("Sucessful")
 
-for checkbox in checkboxes:
-    if checkbox.is_selected():
-        checkbox.click() # uncheck
+else:
+   print("Failed")
+   sys.exit() # quit program
 
-# check elements
-item_select = ["거래량", "시가", "고가", "저가"] # DO NOT EDIT THIS KOREAN CODE!! ## TODO: English patch
-#  trading volume, market price, high price, low price
+data = raw_data["response"]["body"]["items"]["item"] # stock data (only body)
 
-for checkbox in checkboxes:
-    parent = checkbox.find_element(By.XPATH, "..") # parent element
-    label = parent.find_element(By.TAG_NAME, "label")
+print("Analyzing")
 
-    if label.text in item_select:
-        checkbox.click() # check
+df = pd.DataFrame(data)[["itmsNm", "vs", "fltRt", "mkp"]] # create new database -> for analyzing
+df.rename(columns = {"itmsNm": "주식명", "vs": "증감", "fltRt": "증감률", "mkp": "현재가"}, inplace = True) # rename database
 
-# click apply button
-btn_apply = browser.find_element(By.XPATH, "//a[@href='javascript:fieldSubmit()']") # DO NOT EDIT THIS XPATH
-btn_apply.click()
+df["증감"] = df["증감"].astype(int) # ready to sort
+df["증감률"] = df["증감률"].astype(float)
 
-for i in range(1, 40): # repeat page
-    # move page
-    browser.get(url + str(i))
+vs_sorted = df.sort_values(by = "증감", ascending = False) # sort data by increasing
+fltRt_sorted = df.sort_values(by = "증감률", ascending = False) # sort data by change rate
 
-    # get data
-    data_frame = pd.read_html(browser.page_source)[1]
-    data_frame.dropna(axis = "index", how = "all", inplace = True) # if data don't exist in an entire row
-    #                        row/column              apply
-    data_frame.dropna(axis = "columns", how = "all", inplace = True) # if data don't exist in an entire column
-    #data_frame.drop(["N"], axis = 1, inplace = True)
+n_df = pd.concat([vs_sorted.head(10), vs_sorted.tail(10), fltRt_sorted.head(10), fltRt_sorted.tail(10)]) # merge data -> for save in csv file
 
-    if len(data_frame) == 0: # if no data
-        break
-
-    
-    ## TODO: English patch, change save method
-
-    # save file
-    file_n = "stock.csv"
-
-    if os.path.exists(file_n): # exclude header
-        data_frame.to_csv(file_n, encoding = "utf-8-sig", index = False, mode = "a", header = False)
-    
-    else: # if file isn't exist, include header
-        data_frame.to_csv(file_n, encoding = "utf-8-sig", index = False)
-
-    print(f"Finished Page {i}")
-
-browser.quit()
-print("Finished Crawling")
+n_df.to_csv("stock.csv", encoding = "utf-8-sig", mode = "w", index = False) # save in csv file
