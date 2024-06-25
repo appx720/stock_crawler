@@ -1,4 +1,4 @@
 # stock_crawler
-crawl stock data from naver fiance
+crawl stock data from data.co.kr
 
 I recommend not doing too much 😊
