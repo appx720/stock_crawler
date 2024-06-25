@@ -1,5 +1,3 @@
-# Copyright (c) 2022 yeongjun hwang, Github : yeongjun0807, Email : yeongjun0807@gmail.com
-# MIT License
 # Crawler for korea stock (KOSPI, KOSDAQ) - load, analyze and save data in csv file
 # ver. 0.0.1
 # If you want to use this code, go to "https://data.go.kr", get key, make `key` file and put the key in it
